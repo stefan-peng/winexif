@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WinExif Map</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin="">
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      background: #dbe5d3;
+    }
+
+    .leaflet-container {
+      font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+    }
+
+    .photo-marker {
+      background: #0f766e;
+      color: #fff;
+      border-radius: 999px;
+      width: 26px;
+      height: 26px;
+      line-height: 26px;
+      text-align: center;
+      font-size: 12px;
+      box-shadow: 0 6px 20px rgba(15, 118, 110, 0.35);
+      border: 2px solid rgba(255, 255, 255, 0.92);
+    }
+
+    .photo-marker.selected {
+      background: #c2410c;
+    }
+
+    .photo-marker.manual {
+      background: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+  <script>
+    const map = L.map("map", { zoomControl: true }).setView([20, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+      maxZoom: 19
+    }).addTo(map);
+
+    let markers = [];
+    let trackLayer = null;
+
+    function post(message) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify(message));
+      }
+    }
+
+    function clearMarkers() {
+      markers.forEach(marker => marker.remove());
+      markers = [];
+    }
+
+    function renderTrack(track) {
+      if (trackLayer) {
+        trackLayer.remove();
+        trackLayer = null;
+      }
+
+      if (!track || !track.length) {
+        return;
+      }
+
+      trackLayer = L.polyline(track, {
+        color: "#2563eb",
+        weight: 3,
+        opacity: 0.72
+      }).addTo(map);
+    }
+
+    function renderPhotos(photos, selectedIds) {
+      clearMarkers();
+
+      const selected = new Set(selectedIds || []);
+      photos
+        .filter(photo => photo.latitude !== null && photo.longitude !== null)
+        .forEach((photo, index) => {
+          const className = selected.has(photo.id)
+            ? "photo-marker selected"
+            : (photo.coordinateSource || "").startsWith("Manual")
+              ? "photo-marker manual"
+              : "photo-marker";
+
+          const marker = L.marker([photo.latitude, photo.longitude], {
+            icon: L.divIcon({
+              className: "",
+              html: `<div class="${className}">${index + 1}</div>`,
+              iconSize: [26, 26],
+              iconAnchor: [13, 13]
+            })
+          });
+
+          marker.bindTooltip(photo.fileName, { direction: "top" });
+          marker.on("click", () => post({ type: "markerClick", id: photo.id }));
+          marker.addTo(map);
+          markers.push(marker);
+        });
+    }
+
+    function fitToContent(photos) {
+      const coords = [];
+      photos.forEach(photo => {
+        if (photo.latitude !== null && photo.longitude !== null) {
+          coords.push([photo.latitude, photo.longitude]);
+        }
+      });
+
+      if (trackLayer) {
+        coords.push(...trackLayer.getLatLngs());
+      }
+
+      if (!coords.length) {
+        return;
+      }
+
+      map.fitBounds(coords, { padding: [36, 36], maxZoom: 16 });
+    }
+
+    map.on("click", event => {
+      post({
+        type: "mapClick",
+        latitude: event.latlng.lat,
+        longitude: event.latlng.lng
+      });
+    });
+
+    if (window.chrome && window.chrome.webview) {
+      window.chrome.webview.addEventListener("message", event => {
+        const message = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (message.type === "setState") {
+          renderTrack(message.track || []);
+          renderPhotos(message.photos || [], message.selectedIds || []);
+          if (message.fit) {
+            fitToContent(message.photos || []);
+          }
+        } else if (message.type === "focus" && message.latitude !== null && message.longitude !== null) {
+          map.setView([message.latitude, message.longitude], Math.max(map.getZoom(), 14));
+        }
+      });
+    }
+  </script>
+</body>
+</html>

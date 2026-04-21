@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "WinExif (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "WinExif (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
