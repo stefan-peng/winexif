@@ -255,12 +255,37 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock FontSize="20" FontWeight="SemiBold" Text="Photos" />
                             <TextBlock Opacity="0.72" Text="Detailed list with capture times, adjusted times, and coordinate state." />
                         </StackPanel>
-                        <TextBlock Grid.Column="1" VerticalAlignment="Bottom" Text="{x:Bind PhotoCountSummary, Mode=OneWay}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                            <ComboBox
+                                x:Name="PhotoSortComboBox"
+                                Width="180"
+                                Header="Sort by"
+                                SelectedIndex="0"
+                                SelectionChanged="PhotoSortComboBox_SelectionChanged"
+                                AutomationProperties.Name="Photo sort field"
+                                AutomationProperties.AutomationId="PhotoSortFieldComboBox">
+                                <x:String>File name</x:String>
+                                <x:String>Capture time</x:String>
+                                <x:String>Updated time</x:String>
+                                <x:String>Latitude</x:String>
+                                <x:String>Longitude</x:String>
+                                <x:String>Source</x:String>
+                                <x:String>Status</x:String>
+                            </ComboBox>
+                            <CheckBox
+                                VerticalAlignment="Bottom"
+                                Content="Descending"
+                                IsChecked="{x:Bind IsSortDescending, Mode=TwoWay}"
+                                AutomationProperties.Name="Descending sort order"
+                                AutomationProperties.AutomationId="PhotoSortDirectionCheckBox" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" VerticalAlignment="Bottom" Text="{x:Bind PhotoCountSummary, Mode=OneWay}" />
                     </Grid>
 
                     <Grid Grid.Row="1">

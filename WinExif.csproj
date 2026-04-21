@@ -43,6 +43,13 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="WinExif.Tests\**\*.cs" />
+    <EmbeddedResource Remove="WinExif.Tests\**\*" />
+    <None Remove="WinExif.Tests\**\*" />
+    <Page Remove="WinExif.Tests\**\*" />
+  </ItemGroup>
+
   <!-- Publish Properties -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>

@@ -32,6 +32,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private readonly ExifToolService _exifToolService = new();
     private readonly GpxParser _gpxParser = new();
+    private readonly PhotoSortService _photoSortService = new();
     private GpxTrack? _track;
     private bool _mapReady;
     private bool _mapInitializationStarted;
@@ -44,6 +45,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private string _mapClickSummary = "Click the map to choose a manual pin location.";
     private double _offsetMinutes;
     private int _previewRequestVersion;
+    private bool _isSortDescending;
     private bool _rewriteCaptureTime = true;
     private double? _lastClickedLatitude;
     private double? _lastClickedLongitude;
@@ -53,6 +55,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private double _horizontalResizeStartY;
     private double _initialPhotoPaneHeight;
     private double _initialSidebarWidth;
+    private PhotoSortField _photoSortField = PhotoSortField.FileName;
     private double _verticalResizeStartX;
 
     private const double MinimumMapWidth = 420;
@@ -131,6 +134,18 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     public string OffsetSummary => $"Current adjustment: {OffsetMinutes:+0;-0;0} minute(s).";
+
+    public bool IsSortDescending
+    {
+        get => _isSortDescending;
+        set
+        {
+            if (SetProperty(ref _isSortDescending, value))
+            {
+                ApplyPhotoSort();
+            }
+        }
+    }
 
     public string MapClickSummary
     {
@@ -272,6 +287,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             Photos.Remove(photo);
         }
 
+        ApplyPhotoSort();
         SetStatus($"Removed {selected.Count} photo(s).", InfoBarSeverity.Informational);
         PushMapState(fit: true);
     }
@@ -291,6 +307,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             photo.Status = result.Success ? "Saved" : "Save failed";
         }
 
+        ApplyPhotoSort();
         SetStatus(result.Message, result.Success ? InfoBarSeverity.Success : InfoBarSeverity.Error);
     }
 
@@ -437,6 +454,22 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private void TagSelectedAtClick_Click(object sender, RoutedEventArgs e)
     {
         TagSelectedAtLastClick();
+    }
+
+    private void PhotoSortComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _photoSortField = PhotoSortComboBox.SelectedIndex switch
+        {
+            1 => PhotoSortField.CaptureTime,
+            2 => PhotoSortField.AdjustedCaptureTime,
+            3 => PhotoSortField.Latitude,
+            4 => PhotoSortField.Longitude,
+            5 => PhotoSortField.CoordinateSource,
+            6 => PhotoSortField.Status,
+            _ => PhotoSortField.FileName,
+        };
+
+        ApplyPhotoSort();
     }
 
     private async void RefreshSelectedPhotoPreview()
@@ -608,6 +641,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             var message = string.IsNullOrWhiteSpace(resolvedExifTool)
                 ? $"Added {candidatePaths.Count} photo(s). ExifTool was not found, so metadata fell back to file timestamps."
                 : $"Added {candidatePaths.Count} photo(s).";
+            ApplyPhotoSort();
             SetStatus(message, string.IsNullOrWhiteSpace(resolvedExifTool) ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
             PushMapState(fit: true);
         }
@@ -638,6 +672,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             photo.Status = "Manual pin";
         }
 
+        ApplyPhotoSort();
         SetStatus($"Pinned {selected.Count} photo(s) at the selected map location.", InfoBarSeverity.Success);
         PushMapState(fit: false);
     }
@@ -687,6 +722,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             matchedCount++;
         }
 
+        ApplyPhotoSort();
         PushMapState(fit: false);
         return matchedCount;
     }
@@ -743,6 +779,44 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     {
         OnPropertyChanged(nameof(PhotoCountSummary));
         OnPropertyChanged(nameof(SelectionSummary));
+    }
+
+    private void ApplyPhotoSort()
+    {
+        if (Photos.Count <= 1)
+        {
+            return;
+        }
+
+        var sorted = _photoSortService.Sort(
+            Photos,
+            _photoSortField,
+            IsSortDescending ? ListSortDirection.Descending : ListSortDirection.Ascending);
+        var currentOrder = Photos.Select(photo => photo.Id).ToArray();
+        var nextOrder = sorted.Select(photo => photo.Id).ToArray();
+
+        if (currentOrder.SequenceEqual(nextOrder))
+        {
+            return;
+        }
+
+        var selectedIds = GetSelectedPhotos()
+            .Select(photo => photo.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Photos.Clear();
+        foreach (var photo in sorted)
+        {
+            Photos.Add(photo);
+        }
+
+        PhotoListView.SelectedItems.Clear();
+        foreach (var photo in Photos.Where(photo => selectedIds.Contains(photo.Id)))
+        {
+            PhotoListView.SelectedItems.Add(photo);
+        }
+
+        RefreshUiState();
     }
 
     private void SetStatus(string message, InfoBarSeverity severity)
