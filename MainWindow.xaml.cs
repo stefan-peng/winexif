@@ -10,7 +10,11 @@ using System.Text.Json;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Web.WebView2.Core;
+using Windows.Storage;
+using Windows.Storage.FileProperties;
 using Windows.Storage.Pickers;
 using WinExif.Models;
 using WinExif.Services;
@@ -39,9 +43,13 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private string _exifToolPath = string.Empty;
     private string _mapClickSummary = "Click the map to choose a manual pin location.";
     private double _offsetMinutes;
+    private int _previewRequestVersion;
     private bool _rewriteCaptureTime = true;
     private double? _lastClickedLatitude;
     private double? _lastClickedLongitude;
+    private ImageSource? _selectedPhotoPreviewSource;
+    private string _selectedPhotoPreviewStatus = "Select one photo to preview it.";
+    private string _selectedPhotoPreviewTitle = "No photo selected";
     private double _horizontalResizeStartY;
     private double _initialPhotoPaneHeight;
     private double _initialSidebarWidth;
@@ -128,6 +136,24 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     {
         get => _mapClickSummary;
         private set => SetProperty(ref _mapClickSummary, value);
+    }
+
+    public ImageSource? SelectedPhotoPreviewSource
+    {
+        get => _selectedPhotoPreviewSource;
+        private set => SetProperty(ref _selectedPhotoPreviewSource, value);
+    }
+
+    public string SelectedPhotoPreviewStatus
+    {
+        get => _selectedPhotoPreviewStatus;
+        private set => SetProperty(ref _selectedPhotoPreviewStatus, value);
+    }
+
+    public string SelectedPhotoPreviewTitle
+    {
+        get => _selectedPhotoPreviewTitle;
+        private set => SetProperty(ref _selectedPhotoPreviewTitle, value);
     }
 
     public string PhotoCountSummary => $"{Photos.Count} photo(s)";
@@ -290,6 +316,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private void PhotoListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         RefreshUiState();
+        RefreshSelectedPhotoPreview();
 
         if (PhotoListView.SelectedItems.Count == 1 && PhotoListView.SelectedItem is PhotoItem photo && photo.HasCoordinates)
         {
@@ -410,6 +437,75 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private void TagSelectedAtClick_Click(object sender, RoutedEventArgs e)
     {
         TagSelectedAtLastClick();
+    }
+
+    private async void RefreshSelectedPhotoPreview()
+    {
+        if (PhotoListView.SelectedItems.Count != 1 || PhotoListView.SelectedItem is not PhotoItem photo)
+        {
+            _previewRequestVersion++;
+            SetSelectedPhotoPreview(
+                null,
+                PhotoListView.SelectedItems.Count > 1 ? "Multiple photos selected" : "No photo selected",
+                PhotoListView.SelectedItems.Count > 1
+                    ? "Select a single photo to load its preview."
+                    : "Select one photo to preview it.");
+            return;
+        }
+
+        var requestVersion = ++_previewRequestVersion;
+        SetSelectedPhotoPreview(
+            null,
+            photo.FileName,
+            "Loading preview...");
+
+        try
+        {
+            var file = await StorageFile.GetFileFromPathAsync(photo.Path);
+            using var thumbnail = await file.GetThumbnailAsync(
+                ThumbnailMode.PicturesView,
+                1200,
+                ThumbnailOptions.UseCurrentScale);
+
+            if (requestVersion != _previewRequestVersion)
+            {
+                return;
+            }
+
+            if (thumbnail is null)
+            {
+                SetSelectedPhotoPreview(
+                    null,
+                    photo.FileName,
+                    "Preview not available for this file.");
+                return;
+            }
+
+            var bitmap = new BitmapImage();
+            await bitmap.SetSourceAsync(thumbnail);
+
+            if (requestVersion != _previewRequestVersion)
+            {
+                return;
+            }
+
+            SetSelectedPhotoPreview(
+                bitmap,
+                photo.FileName,
+                $"{photo.CaptureTimeDisplay} | {photo.Status}");
+        }
+        catch (Exception)
+        {
+            if (requestVersion != _previewRequestVersion)
+            {
+                return;
+            }
+
+            SetSelectedPhotoPreview(
+                null,
+                photo.FileName,
+                "Preview could not be loaded for this file.");
+        }
     }
 
     private void MapView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
@@ -661,6 +757,13 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
         picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
         return picker;
+    }
+
+    private void SetSelectedPhotoPreview(ImageSource? source, string title, string status)
+    {
+        SelectedPhotoPreviewSource = source;
+        SelectedPhotoPreviewTitle = title;
+        SelectedPhotoPreviewStatus = status;
     }
 
     private void EndVerticalResize(UIElement splitter)

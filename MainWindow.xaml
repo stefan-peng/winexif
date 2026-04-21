@@ -151,10 +151,52 @@
                 <Grid Grid.Column="2" RowSpacing="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="220" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid ColumnSpacing="12">
+                    <StackPanel>
+                        <TextBlock FontSize="20" FontWeight="SemiBold" Text="Image Preview" />
+                        <TextBlock Opacity="0.72" Text="Select a single photo to load an in-app preview." />
+                    </StackPanel>
+
+                    <Border
+                        Grid.Row="1"
+                        Padding="16"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        CornerRadius="20">
+                        <Grid RowSpacing="12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    Text="{x:Bind SelectedPhotoPreviewTitle, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Opacity="0.72"
+                                    Text="{x:Bind SelectedPhotoPreviewStatus, Mode=OneWay}"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+
+                            <Border
+                                Grid.Row="1"
+                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                CornerRadius="16">
+                                <Image
+                                    Source="{x:Bind SelectedPhotoPreviewSource, Mode=OneWay}"
+                                    Stretch="Uniform"
+                                    AutomationProperties.Name="Selected photo preview"
+                                    AutomationProperties.AutomationId="SelectedPhotoPreviewImage" />
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Row="2" ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -178,7 +220,7 @@
                         </Border>
                     </Grid>
 
-                    <Border Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}" CornerRadius="20">
+                    <Border Grid.Row="3" Background="{ThemeResource LayerFillColorDefaultBrush}" CornerRadius="20">
                         <WebView2
                             x:Name="MapView"
                             HorizontalAlignment="Stretch"
