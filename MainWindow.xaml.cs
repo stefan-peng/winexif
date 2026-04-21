@@ -20,6 +20,7 @@ namespace WinExif;
 
 public sealed partial class MainWindow : Window, INotifyPropertyChanged
 {
+    private const string MapVirtualHostName = "appassets.winexif.example";
     private static readonly string[] SupportedPhotoExtensions =
     [
         ".jpg", ".jpeg", ".dng", ".arw", ".cr2", ".cr3", ".nef", ".nrw", ".orf", ".raf", ".rw2", ".pef", ".srw", ".x3f", ".erf", ".kdc"
@@ -158,8 +159,12 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _mapInitializationStarted = true;
         await MapView.EnsureCoreWebView2Async();
         MapView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
-        var mapFile = Path.Combine(AppContext.BaseDirectory, "Assets", "Map", "index.html");
-        MapView.Source = new Uri(mapFile);
+        var mapFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "Map");
+        MapView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+            MapVirtualHostName,
+            mapFolder,
+            CoreWebView2HostResourceAccessKind.Deny);
+        MapView.Source = new Uri($"https://{MapVirtualHostName}/index.html");
     }
 
     private async void AddPhotos_Click(object sender, RoutedEventArgs e)
