@@ -30,6 +30,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private GpxTrack? _track;
     private bool _mapReady;
     private bool _mapInitializationStarted;
+    private bool _isHorizontalResizeActive;
+    private bool _isVerticalResizeActive;
     private string _statusMessage = string.Empty;
     private InfoBarSeverity _statusSeverity = InfoBarSeverity.Informational;
     private string _gpxSummary = "No GPX file loaded.";
@@ -39,6 +41,15 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private bool _rewriteCaptureTime = true;
     private double? _lastClickedLatitude;
     private double? _lastClickedLongitude;
+    private double _horizontalResizeStartY;
+    private double _initialPhotoPaneHeight;
+    private double _initialSidebarWidth;
+    private double _verticalResizeStartX;
+
+    private const double MinimumMapWidth = 420;
+    private const double MinimumPhotoPaneHeight = 180;
+    private const double MinimumSidebarWidth = 280;
+    private const double MinimumTopPaneHeight = 220;
 
     public MainWindow()
     {
@@ -301,6 +312,96 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         TagSelectedAtLastClick();
     }
 
+    private void VerticalSplitter_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _isVerticalResizeActive = true;
+        _verticalResizeStartX = e.GetCurrentPoint(WorkspaceGrid).Position.X;
+        _initialSidebarWidth = SidebarColumn.ActualWidth;
+        ((UIElement)sender).CapturePointer(e.Pointer);
+        e.Handled = true;
+    }
+
+    private void VerticalSplitter_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isVerticalResizeActive)
+        {
+            return;
+        }
+
+        var splitterWidth = Math.Max(VerticalSplitter.ActualWidth, 8);
+        var maximumSidebarWidth = Math.Max(
+            MinimumSidebarWidth,
+            WorkspaceGrid.ActualWidth - splitterWidth - MinimumMapWidth);
+        var delta = e.GetCurrentPoint(WorkspaceGrid).Position.X - _verticalResizeStartX;
+        var requestedWidth = Math.Clamp(_initialSidebarWidth + delta, MinimumSidebarWidth, maximumSidebarWidth);
+        SidebarColumn.Width = new GridLength(requestedWidth);
+        e.Handled = true;
+    }
+
+    private void VerticalSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        EndVerticalResize((UIElement)sender);
+        e.Handled = true;
+    }
+
+    private void VerticalSplitter_PointerCanceled(object sender, PointerRoutedEventArgs e)
+    {
+        EndVerticalResize((UIElement)sender);
+        e.Handled = true;
+    }
+
+    private void VerticalSplitter_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        EndVerticalResize((UIElement)sender);
+    }
+
+    private void HorizontalSplitter_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _isHorizontalResizeActive = true;
+        _horizontalResizeStartY = e.GetCurrentPoint(PaneGrid).Position.Y;
+        _initialPhotoPaneHeight = PhotoPaneRow.ActualHeight;
+        ((UIElement)sender).CapturePointer(e.Pointer);
+        e.Handled = true;
+    }
+
+    private void HorizontalSplitter_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isHorizontalResizeActive)
+        {
+            return;
+        }
+
+        var delta = e.GetCurrentPoint(PaneGrid).Position.Y - _horizontalResizeStartY;
+        var splitterHeight = Math.Max(HorizontalSplitter.ActualHeight, 8);
+        var resizeAreaHeight = WorkspaceRow.ActualHeight + splitterHeight + PhotoPaneRow.ActualHeight;
+        var maximumPhotoPaneHeight = Math.Max(
+            MinimumPhotoPaneHeight,
+            resizeAreaHeight - splitterHeight - MinimumTopPaneHeight);
+        var requestedHeight = Math.Clamp(
+            _initialPhotoPaneHeight - delta,
+            MinimumPhotoPaneHeight,
+            maximumPhotoPaneHeight);
+        PhotoPaneRow.Height = new GridLength(requestedHeight);
+        e.Handled = true;
+    }
+
+    private void HorizontalSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        EndHorizontalResize((UIElement)sender);
+        e.Handled = true;
+    }
+
+    private void HorizontalSplitter_PointerCanceled(object sender, PointerRoutedEventArgs e)
+    {
+        EndHorizontalResize((UIElement)sender);
+        e.Handled = true;
+    }
+
+    private void HorizontalSplitter_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        EndHorizontalResize((UIElement)sender);
+    }
+
     private void TagSelectedAtClick_Click(object sender, RoutedEventArgs e)
     {
         TagSelectedAtLastClick();
@@ -555,6 +656,28 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
         picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
         return picker;
+    }
+
+    private void EndVerticalResize(UIElement splitter)
+    {
+        if (!_isVerticalResizeActive)
+        {
+            return;
+        }
+
+        _isVerticalResizeActive = false;
+        splitter.ReleasePointerCaptures();
+    }
+
+    private void EndHorizontalResize(UIElement splitter)
+    {
+        if (!_isHorizontalResizeActive)
+        {
+            return;
+        }
+
+        _isHorizontalResizeActive = false;
+        splitter.ReleasePointerCaptures();
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

@@ -25,12 +25,13 @@
             </TitleBar.IconSource>
         </TitleBar>
 
-        <Grid Grid.Row="1">
+        <Grid x:Name="PaneGrid" Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="300" />
+                <RowDefinition x:Name="WorkspaceRow" Height="*" />
+                <RowDefinition Height="8" />
+                <RowDefinition x:Name="PhotoPaneRow" Height="300" />
             </Grid.RowDefinitions>
 
             <CommandBar DefaultLabelPosition="Right" OverflowButtonVisibility="Auto">
@@ -52,9 +53,10 @@
                 Message="{x:Bind StatusMessage, Mode=OneWay}"
                 Severity="{x:Bind StatusSeverity, Mode=OneWay}" />
 
-            <Grid Grid.Row="2" Margin="12,0,12,12" ColumnSpacing="12">
+            <Grid x:Name="WorkspaceGrid" Grid.Row="2" Margin="12,0,12,12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="360" />
+                    <ColumnDefinition x:Name="SidebarColumn" Width="360" />
+                    <ColumnDefinition Width="8" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
@@ -131,7 +133,22 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <Grid Grid.Column="1" RowSpacing="12">
+                <Border
+                    x:Name="VerticalSplitter"
+                    Grid.Column="1"
+                    Margin="0,4"
+                    Background="{ThemeResource TextFillColorSecondaryBrush}"
+                    CornerRadius="4"
+                    Opacity="0.18"
+                    PointerCanceled="VerticalSplitter_PointerCanceled"
+                    PointerCaptureLost="VerticalSplitter_PointerCaptureLost"
+                    PointerMoved="VerticalSplitter_PointerMoved"
+                    PointerPressed="VerticalSplitter_PointerPressed"
+                    PointerReleased="VerticalSplitter_PointerReleased"
+                    AutomationProperties.Name="Resize left and right panes"
+                    AutomationProperties.AutomationId="VerticalPaneSplitter" />
+
+                <Grid Grid.Column="2" RowSpacing="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -171,7 +188,22 @@
                 </Grid>
             </Grid>
 
-            <Border Grid.Row="3" Margin="12,0,12,12" Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="20">
+            <Border
+                x:Name="HorizontalSplitter"
+                Grid.Row="3"
+                Margin="12,0,12,0"
+                Background="{ThemeResource TextFillColorSecondaryBrush}"
+                CornerRadius="4"
+                Opacity="0.18"
+                PointerCanceled="HorizontalSplitter_PointerCanceled"
+                PointerCaptureLost="HorizontalSplitter_PointerCaptureLost"
+                PointerMoved="HorizontalSplitter_PointerMoved"
+                PointerPressed="HorizontalSplitter_PointerPressed"
+                PointerReleased="HorizontalSplitter_PointerReleased"
+                AutomationProperties.Name="Resize top and bottom panes"
+                AutomationProperties.AutomationId="HorizontalPaneSplitter" />
+
+            <Border Grid.Row="4" Margin="12,0,12,12" Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="20">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
