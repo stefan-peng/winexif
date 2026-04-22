@@ -19,7 +19,9 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TitleBar x:Name="AppTitleBar" Title="WinExif">
+        <TitleBar
+            x:Name="AppTitleBar"
+            Title="WinExif">
             <TitleBar.IconSource>
                 <ImageIconSource ImageSource="Assets/AppIcon.ico" />
             </TitleBar.IconSource>
@@ -35,14 +37,14 @@
             </Grid.RowDefinitions>
 
             <CommandBar DefaultLabelPosition="Right" OverflowButtonVisibility="Auto">
-                <AppBarButton Click="AddPhotos_Click" Label="Add Photos" />
-                <AppBarButton Click="LoadGpx_Click" Label="Load GPX" />
-                <AppBarButton Click="ApplyGpx_Click" Label="Apply GPX Tags" />
+                <AppBarButton x:Uid="AddPhotosButton" Click="AddPhotos_Click" />
+                <AppBarButton x:Uid="LoadGpxButton" Click="LoadGpx_Click" />
+                <AppBarButton x:Uid="ApplyGpxButton" Click="ApplyGpx_Click" />
                 <AppBarSeparator />
-                <AppBarButton Click="RemoveSelected_Click" Label="Remove Selected" />
-                <AppBarButton Click="SaveSelected_Click" Label="Save Selected" />
+                <AppBarButton x:Uid="RemoveSelectedButton" Click="RemoveSelected_Click" />
+                <AppBarButton x:Uid="SaveSelectedButton" Click="SaveSelected_Click" />
                 <AppBarSeparator />
-                <AppBarButton Click="FitMap_Click" Label="Fit Map" />
+                <AppBarButton x:Uid="FitMapButton" Click="FitMap_Click" />
             </CommandBar>
 
             <InfoBar
@@ -53,25 +55,31 @@
                 Message="{x:Bind StatusMessage, Mode=OneWay}"
                 Severity="{x:Bind StatusSeverity, Mode=OneWay}" />
 
-            <Grid x:Name="WorkspaceGrid" Grid.Row="2" Margin="12,0,12,12">
+            <Grid x:Name="WorkspaceGrid" Grid.Row="2" Margin="12,4,12,12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition x:Name="SidebarColumn" Width="360" />
-                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition x:Name="SidebarColumn" Width="340" />
+                    <ColumnDefinition Width="20" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Spacing="16">
-                        <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="16">
-                            <StackPanel Spacing="12">
-                                <TextBlock FontSize="24" FontWeight="SemiBold" Text="Photo Geotagging" />
-                                <TextBlock Opacity="0.75" Text="Load JPEG or RAW files, align capture times to a GPX track, preview locations, then write metadata through ExifTool." TextWrapping="WrapWholeWords" />
-                            </StackPanel>
-                        </Border>
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock
+                                x:Uid="SidebarTitleText"
+                                FontSize="24"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                x:Uid="SidebarCaptionText"
+                                Opacity="0.72" />
+                        </StackPanel>
 
-                        <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="16">
-                            <StackPanel Spacing="12">
-                                <TextBlock FontSize="18" FontWeight="SemiBold" Text="Sources" />
+                        <Border Style="{StaticResource SidebarCardStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock
+                                    x:Uid="SourcesSectionTitleText"
+                                    FontSize="18"
+                                    FontWeight="SemiBold" />
                                 <Grid ColumnSpacing="8" RowSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -82,91 +90,142 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock VerticalAlignment="Center" Text="GPX" />
+                                    <TextBlock
+                                        x:Uid="GpxLabelText"
+                                        VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="{x:Bind GpxSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
 
-                                    <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="ExifTool" />
+                                    <TextBlock
+                                        x:Uid="ExifToolLabelText"
+                                        Grid.Row="1"
+                                        VerticalAlignment="Center" />
                                     <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                        <TextBox Width="200" PlaceholderText="Auto-detect exiftool.exe" Text="{x:Bind ExifToolPath, Mode=TwoWay}" />
-                                        <Button Click="BrowseExifTool_Click" Content="Browse" />
+                                        <TextBox
+                                            x:Uid="ExifToolPathTextBox"
+                                            Width="190"
+                                            Text="{x:Bind ExifToolPath, Mode=TwoWay}" />
+                                        <Button
+                                            x:Uid="BrowseExifToolButton"
+                                            Click="BrowseExifTool_Click" />
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
-                        <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="16">
-                            <StackPanel Spacing="12">
-                                <TextBlock FontSize="18" FontWeight="SemiBold" Text="Time Alignment" />
-                                <TextBlock Opacity="0.75" Text="Use a positive or negative offset when the camera clock was off. The adjusted time is what GPX matching uses." TextWrapping="WrapWholeWords" />
+                        <Border Style="{StaticResource SidebarCardStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock
+                                    x:Uid="TimeSectionTitleText"
+                                    FontSize="18"
+                                    FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <NumberBox
                                         x:Name="OffsetMinutesBox"
+                                        x:Uid="OffsetMinutesBox"
                                         Width="160"
-                                        Header="Camera offset (minutes)"
                                         SmallChange="1"
                                         SpinButtonPlacementMode="Compact"
                                         Value="{x:Bind OffsetMinutes, Mode=TwoWay}" />
                                     <CheckBox
+                                        x:Uid="RewriteCaptureTimeCheckBox"
                                         VerticalAlignment="Bottom"
-                                        Content="Rewrite capture time on save"
                                         IsChecked="{x:Bind RewriteCaptureTime, Mode=TwoWay}" />
                                 </StackPanel>
-                                <TextBlock Text="{x:Bind OffsetSummary, Mode=OneWay}" />
+                                <TextBlock Text="{x:Bind OffsetSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                             </StackPanel>
                         </Border>
 
-                        <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="16">
-                            <StackPanel Spacing="12">
-                                <TextBlock FontSize="18" FontWeight="SemiBold" Text="Manual Pinning" />
-                                <TextBlock Text="{x:Bind MapClickSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
-                                <Button Click="TagSelectedAtClick_Click" Content="Tag Selected At Last Map Click" HorizontalAlignment="Left" />
-                                <TextBlock Opacity="0.75" Text="You can also drag selected rows into the map drop target after choosing a point on the map." TextWrapping="WrapWholeWords" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="16">
+                        <Border Style="{StaticResource SidebarCardStyle}">
                             <StackPanel Spacing="10">
-                                <TextBlock FontSize="18" FontWeight="SemiBold" Text="Selection" />
+                                <TextBlock
+                                    x:Uid="ManualPinSectionTitleText"
+                                    FontSize="18"
+                                    FontWeight="SemiBold" />
+                                <TextBlock Text="{x:Bind MapClickSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                <Button
+                                    x:Uid="TagSelectedAtClickButton"
+                                    Click="TagSelectedAtClick_Click"
+                                    HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SidebarCardStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock
+                                    x:Uid="SelectionSectionTitleText"
+                                    FontSize="18"
+                                    FontWeight="SemiBold" />
                                 <TextBlock Text="{x:Bind SelectionSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <Border
+                <local:ResizeCursorGrid
                     x:Name="VerticalSplitter"
                     Grid.Column="1"
-                    Margin="0,4"
-                    Background="{ThemeResource TextFillColorSecondaryBrush}"
-                    CornerRadius="4"
-                    Opacity="0.18"
+                    Margin="6,12"
+                    Background="Transparent"
+                    CursorShape="SizeWestEast"
                     PointerCanceled="VerticalSplitter_PointerCanceled"
                     PointerCaptureLost="VerticalSplitter_PointerCaptureLost"
+                    PointerEntered="VerticalSplitter_PointerEnteredVisual"
+                    PointerExited="VerticalSplitter_PointerExitedVisual"
                     PointerMoved="VerticalSplitter_PointerMoved"
                     PointerPressed="VerticalSplitter_PointerPressed"
                     PointerReleased="VerticalSplitter_PointerReleased"
                     AutomationProperties.Name="Resize left and right panes"
-                    AutomationProperties.AutomationId="VerticalPaneSplitter" />
+                    AutomationProperties.AutomationId="VerticalPaneSplitter">
+                    <Grid
+                        Width="8"
+                        Height="72"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False">
+                        <Border
+                            x:Name="VerticalSplitterGlow"
+                            Width="8"
+                            Height="72"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                            CornerRadius="{StaticResource AppGripCornerRadius}"
+                            Opacity="0" />
+                        <Border
+                            x:Name="VerticalSplitterHandle"
+                            Width="3"
+                            Height="48"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="{ThemeResource TextFillColorSecondaryBrush}"
+                            CornerRadius="{StaticResource AppGripCornerRadius}"
+                            Opacity="0.4" />
+                    </Grid>
+                </local:ResizeCursorGrid>
 
-                <Grid Grid.Column="2" RowSpacing="12">
+                <Grid
+                    x:Name="PreviewMapGrid"
+                    Grid.Column="2"
+                    Margin="2,0,0,0"
+                    RowSpacing="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="220" />
+                        <RowDefinition x:Name="PreviewPaneRow" Height="208" />
+                        <RowDefinition Height="24" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition x:Name="MapPaneRow" Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel>
-                        <TextBlock FontSize="20" FontWeight="SemiBold" Text="Image Preview" />
-                        <TextBlock Opacity="0.72" Text="Select a single photo to load an in-app preview." />
-                    </StackPanel>
+                    <TextBlock
+                        x:Uid="ImagePreviewTitleText"
+                        Margin="0,0,0,10"
+                        FontSize="20"
+                        FontWeight="SemiBold" />
 
                     <Border
                         Grid.Row="1"
-                        Padding="16"
-                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                        CornerRadius="20">
-                        <Grid RowSpacing="12">
+                        Style="{StaticResource PreviewCardStyle}">
+                        <Grid RowSpacing="10">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
@@ -186,7 +245,7 @@
                             <Border
                                 Grid.Row="1"
                                 Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                CornerRadius="16">
+                                CornerRadius="{StaticResource AppNestedCornerRadius}">
                                 <Image
                                     Source="{x:Bind SelectedPhotoPreviewSource, Mode=OneWay}"
                                     Stretch="Uniform"
@@ -196,31 +255,80 @@
                         </Grid>
                     </Border>
 
-                    <Grid Grid.Row="2" ColumnSpacing="12">
+                    <local:ResizeCursorGrid
+                        x:Name="PreviewMapSplitter"
+                        Grid.Row="2"
+                        Margin="0,4"
+                        Background="Transparent"
+                        CursorShape="SizeNorthSouth"
+                        PointerCanceled="PreviewMapSplitter_PointerCanceled"
+                        PointerCaptureLost="PreviewMapSplitter_PointerCaptureLost"
+                        PointerEntered="PreviewMapSplitter_PointerEnteredVisual"
+                        PointerExited="PreviewMapSplitter_PointerExitedVisual"
+                        PointerMoved="PreviewMapSplitter_PointerMoved"
+                        PointerPressed="PreviewMapSplitter_PointerPressed"
+                        PointerReleased="PreviewMapSplitter_PointerReleased"
+                        AutomationProperties.Name="Resize image preview and map preview"
+                        AutomationProperties.AutomationId="PreviewMapSplitter">
+                        <Grid Height="8" VerticalAlignment="Center" IsHitTestVisible="False">
+                            <Border
+                                x:Name="PreviewMapSplitterGlow"
+                                Height="8"
+                                Width="84"
+                                HorizontalAlignment="Center"
+                                Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                                CornerRadius="{StaticResource AppGripCornerRadius}"
+                                Opacity="0" />
+                            <Border
+                                x:Name="PreviewMapSplitterHandle"
+                                Height="3"
+                                Width="56"
+                                HorizontalAlignment="Center"
+                                Background="{ThemeResource TextFillColorSecondaryBrush}"
+                                CornerRadius="{StaticResource AppGripCornerRadius}"
+                                Opacity="0.4" />
+                        </Grid>
+                    </local:ResizeCursorGrid>
+
+                    <Grid Grid.Row="3" ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Map Preview" />
-                            <TextBlock Opacity="0.72" Text="Blue track = GPX, markers = matched or manually pinned photos." />
-                        </StackPanel>
+
+                        <TextBlock
+                            x:Uid="MapPreviewTitleText"
+                            Margin="0,8,0,10"
+                            FontSize="20"
+                            FontWeight="SemiBold" />
+
                         <Border
                             Grid.Column="1"
-                            Padding="12"
-                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                            CornerRadius="14"
+                            Padding="10"
+                            Background="{ThemeResource LayerFillColorAltBrush}"
+                            BorderBrush="{ThemeResource ControlStrokeColorSecondaryBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource AppCompactCornerRadius}"
                             AllowDrop="True"
                             DragOver="MapDropTarget_DragOver"
                             Drop="MapDropTarget_Drop">
-                            <StackPanel Width="220" Spacing="4">
-                                <TextBlock FontWeight="SemiBold" Text="Drop Selected Photos Here" />
-                                <TextBlock FontSize="12" Opacity="0.72" Text="Click the map first, then drag rows here to assign that point." TextWrapping="WrapWholeWords" />
+                            <StackPanel Width="188" Spacing="2">
+                                <TextBlock
+                                    x:Uid="MapDropTargetTitleText"
+                                    FontWeight="SemiBold" />
+                                <TextBlock
+                                    x:Uid="MapDropTargetCaptionText"
+                                    FontSize="12"
+                                    Opacity="0.72"
+                                    TextWrapping="WrapWholeWords" />
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <Border Grid.Row="3" Background="{ThemeResource LayerFillColorDefaultBrush}" CornerRadius="20">
+                    <Border
+                        Grid.Row="4"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        CornerRadius="{StaticResource AppNestedCornerRadius}">
                         <WebView2
                             x:Name="MapView"
                             HorizontalAlignment="Stretch"
@@ -230,62 +338,64 @@
                 </Grid>
             </Grid>
 
-            <Border
+            <local:ResizeCursorGrid
                 x:Name="HorizontalSplitter"
                 Grid.Row="3"
-                Margin="12,0,12,0"
-                Background="{ThemeResource TextFillColorSecondaryBrush}"
-                CornerRadius="4"
-                Opacity="0.18"
+                Margin="12,6,12,6"
+                Background="Transparent"
+                CursorShape="SizeNorthSouth"
                 PointerCanceled="HorizontalSplitter_PointerCanceled"
                 PointerCaptureLost="HorizontalSplitter_PointerCaptureLost"
+                PointerEntered="HorizontalSplitter_PointerEnteredVisual"
+                PointerExited="HorizontalSplitter_PointerExitedVisual"
                 PointerMoved="HorizontalSplitter_PointerMoved"
                 PointerPressed="HorizontalSplitter_PointerPressed"
                 PointerReleased="HorizontalSplitter_PointerReleased"
                 AutomationProperties.Name="Resize top and bottom panes"
-                AutomationProperties.AutomationId="HorizontalPaneSplitter" />
+                AutomationProperties.AutomationId="HorizontalPaneSplitter">
+                <Grid Height="8" VerticalAlignment="Center" IsHitTestVisible="False">
+                    <Border
+                        x:Name="HorizontalSplitterGlow"
+                        Height="8"
+                        Width="84"
+                        HorizontalAlignment="Center"
+                        Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                        CornerRadius="{StaticResource AppGripCornerRadius}"
+                        Opacity="0" />
+                    <Border
+                        x:Name="HorizontalSplitterHandle"
+                        Height="3"
+                        Width="56"
+                        HorizontalAlignment="Center"
+                        Background="{ThemeResource TextFillColorSecondaryBrush}"
+                        CornerRadius="{StaticResource AppGripCornerRadius}"
+                        Opacity="0.4" />
+                </Grid>
+            </local:ResizeCursorGrid>
 
-            <Border Grid.Row="4" Margin="12,0,12,12" Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="20">
+            <Border
+                Grid.Row="4"
+                Margin="{StaticResource AppSectionMargin}"
+                Style="{StaticResource SectionPaneStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Grid Margin="4,0,4,10">
+                    <Grid Margin="2,2,2,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Photos" />
-                            <TextBlock Opacity="0.72" Text="Detailed list with capture times, adjusted times, and coordinate state." />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
-                            <ComboBox
-                                x:Name="PhotoSortComboBox"
-                                Width="180"
-                                Header="Sort by"
-                                SelectedIndex="0"
-                                SelectionChanged="PhotoSortComboBox_SelectionChanged"
-                                AutomationProperties.Name="Photo sort field"
-                                AutomationProperties.AutomationId="PhotoSortFieldComboBox">
-                                <x:String>File name</x:String>
-                                <x:String>Capture time</x:String>
-                                <x:String>Updated time</x:String>
-                                <x:String>Latitude</x:String>
-                                <x:String>Longitude</x:String>
-                                <x:String>Source</x:String>
-                                <x:String>Status</x:String>
-                            </ComboBox>
-                            <CheckBox
-                                VerticalAlignment="Bottom"
-                                Content="Descending"
-                                IsChecked="{x:Bind IsSortDescending, Mode=TwoWay}"
-                                AutomationProperties.Name="Descending sort order"
-                                AutomationProperties.AutomationId="PhotoSortDirectionCheckBox" />
-                        </StackPanel>
-                        <TextBlock Grid.Column="2" VerticalAlignment="Bottom" Text="{x:Bind PhotoCountSummary, Mode=OneWay}" />
+
+                        <TextBlock
+                            x:Uid="PhotosSectionTitleText"
+                            FontSize="20"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind PhotoCountSummary, Mode=OneWay}" />
                     </Grid>
 
                     <Grid Grid.Row="1">
@@ -294,37 +404,205 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <Grid Padding="8,0,24,8" ColumnSpacing="12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="220" />
-                                <ColumnDefinition Width="175" />
-                                <ColumnDefinition Width="175" />
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="140" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock FontWeight="SemiBold" Text="File" />
-                            <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="Capture Time" />
-                            <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="Updated Time" />
-                            <TextBlock Grid.Column="3" FontWeight="SemiBold" Text="Latitude" />
-                            <TextBlock Grid.Column="4" FontWeight="SemiBold" Text="Longitude" />
-                            <TextBlock Grid.Column="5" FontWeight="SemiBold" Text="Source" />
-                            <TextBlock Grid.Column="6" FontWeight="SemiBold" Text="Status" />
-                        </Grid>
+                        <Border
+                            Padding="4"
+                            Background="{ThemeResource LayerFillColorAltBrush}"
+                            CornerRadius="{StaticResource AppCompactCornerRadius}">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="175" />
+                                    <ColumnDefinition Width="175" />
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="140" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Button
+                                    x:Name="FileSortHeaderButton"
+                                    x:Uid="FileSortHeaderButton"
+                                    Click="PhotoSortHeader_Click"
+                                    Style="{StaticResource SortHeaderButtonStyle}"
+                                    Tag="FileName"
+                                    AutomationProperties.AutomationId="FileSortHeaderButton">
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Uid="FileSortHeaderLabel" FontWeight="SemiBold" />
+                                        <TextBlock
+                                            x:Name="FileSortHeaderIndicator"
+                                            Grid.Column="1"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            VerticalAlignment="Center"
+                                            Visibility="Collapsed" />
+                                    </Grid>
+                                </Button>
+
+                                <Button
+                                    x:Name="CaptureTimeSortHeaderButton"
+                                    x:Uid="CaptureTimeSortHeaderButton"
+                                    Grid.Column="1"
+                                    Click="PhotoSortHeader_Click"
+                                    Style="{StaticResource SortHeaderButtonStyle}"
+                                    Tag="CaptureTime"
+                                    AutomationProperties.AutomationId="CaptureTimeSortHeaderButton">
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Uid="CaptureTimeSortHeaderLabel" FontWeight="SemiBold" />
+                                        <TextBlock
+                                            x:Name="CaptureTimeSortHeaderIndicator"
+                                            Grid.Column="1"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            VerticalAlignment="Center"
+                                            Visibility="Collapsed" />
+                                    </Grid>
+                                </Button>
+
+                                <Button
+                                    x:Name="UpdatedTimeSortHeaderButton"
+                                    x:Uid="UpdatedTimeSortHeaderButton"
+                                    Grid.Column="2"
+                                    Click="PhotoSortHeader_Click"
+                                    Style="{StaticResource SortHeaderButtonStyle}"
+                                    Tag="AdjustedCaptureTime"
+                                    AutomationProperties.AutomationId="UpdatedTimeSortHeaderButton">
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Uid="UpdatedTimeSortHeaderLabel" FontWeight="SemiBold" />
+                                        <TextBlock
+                                            x:Name="UpdatedTimeSortHeaderIndicator"
+                                            Grid.Column="1"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            VerticalAlignment="Center"
+                                            Visibility="Collapsed" />
+                                    </Grid>
+                                </Button>
+
+                                <Button
+                                    x:Name="LatitudeSortHeaderButton"
+                                    x:Uid="LatitudeSortHeaderButton"
+                                    Grid.Column="3"
+                                    Click="PhotoSortHeader_Click"
+                                    Style="{StaticResource SortHeaderButtonStyle}"
+                                    Tag="Latitude"
+                                    AutomationProperties.AutomationId="LatitudeSortHeaderButton">
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Uid="LatitudeSortHeaderLabel" FontWeight="SemiBold" />
+                                        <TextBlock
+                                            x:Name="LatitudeSortHeaderIndicator"
+                                            Grid.Column="1"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            VerticalAlignment="Center"
+                                            Visibility="Collapsed" />
+                                    </Grid>
+                                </Button>
+
+                                <Button
+                                    x:Name="LongitudeSortHeaderButton"
+                                    x:Uid="LongitudeSortHeaderButton"
+                                    Grid.Column="4"
+                                    Click="PhotoSortHeader_Click"
+                                    Style="{StaticResource SortHeaderButtonStyle}"
+                                    Tag="Longitude"
+                                    AutomationProperties.AutomationId="LongitudeSortHeaderButton">
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Uid="LongitudeSortHeaderLabel" FontWeight="SemiBold" />
+                                        <TextBlock
+                                            x:Name="LongitudeSortHeaderIndicator"
+                                            Grid.Column="1"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            VerticalAlignment="Center"
+                                            Visibility="Collapsed" />
+                                    </Grid>
+                                </Button>
+
+                                <Button
+                                    x:Name="SourceSortHeaderButton"
+                                    x:Uid="SourceSortHeaderButton"
+                                    Grid.Column="5"
+                                    Click="PhotoSortHeader_Click"
+                                    Style="{StaticResource SortHeaderButtonStyle}"
+                                    Tag="CoordinateSource"
+                                    AutomationProperties.AutomationId="SourceSortHeaderButton">
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Uid="SourceSortHeaderLabel" FontWeight="SemiBold" />
+                                        <TextBlock
+                                            x:Name="SourceSortHeaderIndicator"
+                                            Grid.Column="1"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            VerticalAlignment="Center"
+                                            Visibility="Collapsed" />
+                                    </Grid>
+                                </Button>
+
+                                <Button
+                                    x:Name="StatusSortHeaderButton"
+                                    x:Uid="StatusSortHeaderButton"
+                                    Grid.Column="6"
+                                    Click="PhotoSortHeader_Click"
+                                    Style="{StaticResource SortHeaderButtonStyle}"
+                                    Tag="Status"
+                                    AutomationProperties.AutomationId="StatusSortHeaderButton">
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Uid="StatusSortHeaderLabel" FontWeight="SemiBold" />
+                                        <TextBlock
+                                            x:Name="StatusSortHeaderIndicator"
+                                            Grid.Column="1"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            VerticalAlignment="Center"
+                                            Visibility="Collapsed" />
+                                    </Grid>
+                                </Button>
+                            </Grid>
+                        </Border>
 
                         <ListView
                             x:Name="PhotoListView"
+                            x:Uid="PhotoListView"
                             Grid.Row="1"
+                            Margin="0,6,0,0"
                             CanDragItems="True"
                             IsMultiSelectCheckBoxEnabled="True"
+                            ItemContainerStyle="{StaticResource PhotoListItemStyle}"
                             ItemsSource="{x:Bind Photos, Mode=OneWay}"
                             SelectionMode="Extended"
                             SelectionChanged="PhotoListView_SelectionChanged"
                             DragItemsStarting="PhotoListView_DragItemsStarting">
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="models:PhotoItem">
-                                    <Grid MinHeight="42" Padding="8,8,24,8" ColumnSpacing="12">
+                                    <Grid MinHeight="40" Padding="8,6,24,6" ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="220" />
                                             <ColumnDefinition Width="175" />

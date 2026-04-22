@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="MainWindowRoot.Title" xml:space="preserve">
+    <value>WinExif</value>
+  </data>
+  <data name="AppTitleBar.Title" xml:space="preserve">
+    <value>WinExif</value>
+  </data>
+  <data name="AddPhotosButton.Label" xml:space="preserve">
+    <value>Add Photos</value>
+  </data>
+  <data name="LoadGpxButton.Label" xml:space="preserve">
+    <value>Load GPX</value>
+  </data>
+  <data name="ApplyGpxButton.Label" xml:space="preserve">
+    <value>Match Track</value>
+  </data>
+  <data name="RemoveSelectedButton.Label" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="SaveSelectedButton.Label" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="FitMapButton.Label" xml:space="preserve">
+    <value>Fit Map</value>
+  </data>
+
+  <data name="SidebarTitleText.Text" xml:space="preserve">
+    <value>Photo geotagging</value>
+  </data>
+  <data name="SidebarCaptionText.Text" xml:space="preserve">
+    <value>Track, preview, save.</value>
+  </data>
+  <data name="SourcesSectionTitleText.Text" xml:space="preserve">
+    <value>Sources</value>
+  </data>
+  <data name="GpxLabelText.Text" xml:space="preserve">
+    <value>GPX</value>
+  </data>
+  <data name="ExifToolLabelText.Text" xml:space="preserve">
+    <value>ExifTool</value>
+  </data>
+  <data name="ExifToolPathTextBox.PlaceholderText" xml:space="preserve">
+    <value>Auto-detect exiftool.exe</value>
+  </data>
+  <data name="BrowseExifToolButton.Content" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="TimeSectionTitleText.Text" xml:space="preserve">
+    <value>Time alignment</value>
+  </data>
+  <data name="OffsetMinutesBox.Header" xml:space="preserve">
+    <value>Offset (minutes)</value>
+  </data>
+  <data name="RewriteCaptureTimeCheckBox.Content" xml:space="preserve">
+    <value>Rewrite capture time</value>
+  </data>
+  <data name="ManualPinSectionTitleText.Text" xml:space="preserve">
+    <value>Manual pin</value>
+  </data>
+  <data name="TagSelectedAtClickButton.Content" xml:space="preserve">
+    <value>Pin selected</value>
+  </data>
+  <data name="SelectionSectionTitleText.Text" xml:space="preserve">
+    <value>Selection</value>
+  </data>
+  <data name="ImagePreviewTitleText.Text" xml:space="preserve">
+    <value>Image preview</value>
+  </data>
+  <data name="MapPreviewTitleText.Text" xml:space="preserve">
+    <value>Map preview</value>
+  </data>
+  <data name="MapDropTargetTitleText.Text" xml:space="preserve">
+    <value>Drop to pin</value>
+  </data>
+  <data name="MapDropTargetCaptionText.Text" xml:space="preserve">
+    <value>Click the map, then drop the selection.</value>
+  </data>
+  <data name="PhotosSectionTitleText.Text" xml:space="preserve">
+    <value>Photos</value>
+  </data>
+
+  <data name="FileSortHeaderLabel.Text" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="CaptureTimeSortHeaderLabel.Text" xml:space="preserve">
+    <value>Capture time</value>
+  </data>
+  <data name="UpdatedTimeSortHeaderLabel.Text" xml:space="preserve">
+    <value>Updated time</value>
+  </data>
+  <data name="LatitudeSortHeaderLabel.Text" xml:space="preserve">
+    <value>Latitude</value>
+  </data>
+  <data name="LongitudeSortHeaderLabel.Text" xml:space="preserve">
+    <value>Longitude</value>
+  </data>
+  <data name="SourceSortHeaderLabel.Text" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="StatusSortHeaderLabel.Text" xml:space="preserve">
+    <value>Status</value>
+  </data>
+
+  <data name="FileSortHeaderButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sort by file</value>
+  </data>
+  <data name="CaptureTimeSortHeaderButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sort by capture time</value>
+  </data>
+  <data name="UpdatedTimeSortHeaderButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sort by updated time</value>
+  </data>
+  <data name="LatitudeSortHeaderButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sort by latitude</value>
+  </data>
+  <data name="LongitudeSortHeaderButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sort by longitude</value>
+  </data>
+  <data name="SourceSortHeaderButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sort by source</value>
+  </data>
+  <data name="StatusSortHeaderButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sort by status</value>
+  </data>
+  <data name="PhotoListView.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Photo list</value>
+  </data>
+
+  <data name="Summary.GpxNone" xml:space="preserve">
+    <value>No GPX loaded.</value>
+  </data>
+  <data name="Summary.GpxLoadedFormat" xml:space="preserve">
+    <value>{0} | {1} points | {2:g} to {3:g}</value>
+  </data>
+  <data name="Summary.MapClickDefault" xml:space="preserve">
+    <value>Select a point on the map.</value>
+  </data>
+  <data name="Summary.MapClickFormat" xml:space="preserve">
+    <value>Pin: {0:F6}, {1:F6}</value>
+  </data>
+  <data name="Summary.OffsetFormat" xml:space="preserve">
+    <value>Adjustment: {0:+0;-0;0} min</value>
+  </data>
+  <data name="Summary.PhotoCountFormat" xml:space="preserve">
+    <value>{0} photo(s)</value>
+  </data>
+  <data name="Summary.SelectionNone" xml:space="preserve">
+    <value>No photos selected.</value>
+  </data>
+  <data name="Summary.SelectionFormat" xml:space="preserve">
+    <value>{0} selected, {1} ready to save.</value>
+  </data>
+
+  <data name="Preview.NoSelectionTitle" xml:space="preserve">
+    <value>No photo selected</value>
+  </data>
+  <data name="Preview.NoSelectionStatus" xml:space="preserve">
+    <value>Select a single photo to preview.</value>
+  </data>
+  <data name="Preview.MultipleSelectionTitle" xml:space="preserve">
+    <value>Multiple photos selected</value>
+  </data>
+  <data name="Preview.MultipleSelectionStatus" xml:space="preserve">
+    <value>Select a single photo to preview.</value>
+  </data>
+  <data name="Preview.LoadingStatus" xml:space="preserve">
+    <value>Loading preview...</value>
+  </data>
+  <data name="Preview.UnavailableStatus" xml:space="preserve">
+    <value>Preview not available for this file.</value>
+  </data>
+  <data name="Preview.FailedStatus" xml:space="preserve">
+    <value>Preview could not be loaded.</value>
+  </data>
+  <data name="Preview.LineFormat" xml:space="preserve">
+    <value>{0} | {1}</value>
+  </data>
+
+  <data name="Status.GpxLoaded" xml:space="preserve">
+    <value>Loaded {0} GPX point(s).</value>
+  </data>
+  <data name="Status.GpxRequired" xml:space="preserve">
+    <value>Load a GPX track first.</value>
+  </data>
+  <data name="Status.ApplyGpxComplete" xml:space="preserve">
+    <value>Matched {0} photo(s) to the track.</value>
+  </data>
+  <data name="Status.RemoveSelectionRequired" xml:space="preserve">
+    <value>Select photo(s) to remove.</value>
+  </data>
+  <data name="Status.RemoveComplete" xml:space="preserve">
+    <value>Removed {0} photo(s).</value>
+  </data>
+  <data name="Status.SaveSelectionRequired" xml:space="preserve">
+    <value>Select photo(s) to save.</value>
+  </data>
+  <data name="Status.MapInitFailed" xml:space="preserve">
+    <value>The map view failed to initialize.</value>
+  </data>
+  <data name="Status.NoSupportedPhotos" xml:space="preserve">
+    <value>No new supported photos were added.</value>
+  </data>
+  <data name="Status.AddPhotosComplete" xml:space="preserve">
+    <value>Added {0} photo(s).</value>
+  </data>
+  <data name="Status.AddPhotosWithoutExifTool" xml:space="preserve">
+    <value>Added {0} photo(s). ExifTool was not found, so file timestamps were used.</value>
+  </data>
+  <data name="Status.MetadataLoadFailed" xml:space="preserve">
+    <value>Failed to load photo metadata: {0}</value>
+  </data>
+  <data name="Status.SelectPhotosFirst" xml:space="preserve">
+    <value>Select photo(s) first.</value>
+  </data>
+  <data name="Status.SelectMapPointFirst" xml:space="preserve">
+    <value>Click the map to choose a point first.</value>
+  </data>
+  <data name="Status.PinComplete" xml:space="preserve">
+    <value>Pinned {0} photo(s) at the selected location.</value>
+  </data>
+</root>

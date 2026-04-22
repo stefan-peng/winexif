@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using Microsoft.Windows.ApplicationModel.Resources;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -25,6 +26,7 @@ namespace WinExif;
 public sealed partial class MainWindow : Window, INotifyPropertyChanged
 {
     private const string MapVirtualHostName = "appassets.winexif.example";
+    private static ResourceLoader? _resourceLoader;
     private static readonly string[] SupportedPhotoExtensions =
     [
         ".jpg", ".jpeg", ".dng", ".arw", ".cr2", ".cr3", ".nef", ".nrw", ".orf", ".raf", ".rw2", ".pef", ".srw", ".x3f", ".erf", ".kdc"
@@ -33,33 +35,43 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ExifToolService _exifToolService = new();
     private readonly GpxParser _gpxParser = new();
     private readonly PhotoSortService _photoSortService = new();
+    private readonly PhotoSortStateService _photoSortStateService = new();
     private GpxTrack? _track;
     private bool _mapReady;
     private bool _mapInitializationStarted;
     private bool _isHorizontalResizeActive;
+    private bool _isHorizontalSplitterHovered;
+    private bool _isPreviewMapResizeActive;
+    private bool _isPreviewMapSplitterHovered;
     private bool _isVerticalResizeActive;
+    private bool _isVerticalSplitterHovered;
     private string _statusMessage = string.Empty;
     private InfoBarSeverity _statusSeverity = InfoBarSeverity.Informational;
-    private string _gpxSummary = "No GPX file loaded.";
+    private string _gpxSummary = GetString("Summary.GpxNone");
     private string _exifToolPath = string.Empty;
-    private string _mapClickSummary = "Click the map to choose a manual pin location.";
+    private string _mapClickSummary = GetString("Summary.MapClickDefault");
     private double _offsetMinutes;
     private int _previewRequestVersion;
-    private bool _isSortDescending;
     private bool _rewriteCaptureTime = true;
     private double? _lastClickedLatitude;
     private double? _lastClickedLongitude;
     private ImageSource? _selectedPhotoPreviewSource;
-    private string _selectedPhotoPreviewStatus = "Select one photo to preview it.";
-    private string _selectedPhotoPreviewTitle = "No photo selected";
+    private string _selectedPhotoPreviewStatus = GetString("Preview.NoSelectionStatus");
+    private string _selectedPhotoPreviewTitle = GetString("Preview.NoSelectionTitle");
     private double _horizontalResizeStartY;
     private double _initialPhotoPaneHeight;
+    private double _initialMapPaneHeight;
+    private double _initialPreviewPaneHeight;
     private double _initialSidebarWidth;
     private PhotoSortField _photoSortField = PhotoSortField.FileName;
+    private ListSortDirection _photoSortDirection = ListSortDirection.Ascending;
+    private double _previewMapResizeStartY;
     private double _verticalResizeStartX;
 
     private const double MinimumMapWidth = 420;
+    private const double MinimumMapPreviewHeight = 180;
     private const double MinimumPhotoPaneHeight = 180;
+    private const double MinimumPreviewPaneHeight = 120;
     private const double MinimumSidebarWidth = 280;
     private const double MinimumTopPaneHeight = 220;
 
@@ -70,9 +82,13 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
 
-        AppWindow.SetIcon("Assets/AppIcon.ico");
         Photos.CollectionChanged += (_, _) => RefreshUiState();
         Activated += MainWindow_Activated;
+
+        UpdateSortHeaderVisuals();
+        UpdateVerticalSplitterVisual(isHovered: false);
+        UpdateHorizontalSplitterVisual(isHovered: false);
+        UpdatePreviewMapSplitterVisual(isHovered: false);
     }
 
     public ObservableCollection<PhotoItem> Photos { get; } = [];
@@ -133,19 +149,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         set => SetProperty(ref _rewriteCaptureTime, value);
     }
 
-    public string OffsetSummary => $"Current adjustment: {OffsetMinutes:+0;-0;0} minute(s).";
-
-    public bool IsSortDescending
-    {
-        get => _isSortDescending;
-        set
-        {
-            if (SetProperty(ref _isSortDescending, value))
-            {
-                ApplyPhotoSort();
-            }
-        }
-    }
+    public string OffsetSummary => FormatString("Summary.OffsetFormat", OffsetMinutes);
 
     public string MapClickSummary
     {
@@ -171,7 +175,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         private set => SetProperty(ref _selectedPhotoPreviewTitle, value);
     }
 
-    public string PhotoCountSummary => $"{Photos.Count} photo(s)";
+    public string PhotoCountSummary => FormatString("Summary.PhotoCountFormat", Photos.Count);
 
     public string SelectionSummary
     {
@@ -180,11 +184,11 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             var selected = GetSelectedPhotos();
             if (selected.Count == 0)
             {
-                return "No photos selected.";
+                return GetString("Summary.SelectionNone");
             }
 
             var matched = selected.Count(photo => photo.HasCoordinates);
-            return $"{selected.Count} selected, {matched} with coordinates ready to save.";
+            return FormatString("Summary.SelectionFormat", selected.Count, matched);
         }
     }
 
@@ -249,8 +253,13 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             _track = _gpxParser.Parse(file.Path);
-            GpxSummary = $"{Path.GetFileName(file.Path)} | {_track.Points.Count} points | {_track.StartTime.LocalDateTime:g} to {_track.EndTime.LocalDateTime:g}";
-            SetStatus($"Loaded {_track.Points.Count} timed GPX points.", InfoBarSeverity.Success);
+            GpxSummary = FormatString(
+                "Summary.GpxLoadedFormat",
+                Path.GetFileName(file.Path),
+                _track.Points.Count,
+                _track.StartTime.LocalDateTime,
+                _track.EndTime.LocalDateTime);
+            SetStatus(FormatString("Status.GpxLoaded", _track.Points.Count), InfoBarSeverity.Success);
             PushMapState(fit: true);
         }
         catch (Exception ex)
@@ -263,13 +272,13 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_track is null)
         {
-            SetStatus("Load a GPX track before applying tags.", InfoBarSeverity.Warning);
+            SetStatus(GetString("Status.GpxRequired"), InfoBarSeverity.Warning);
             return;
         }
 
         var matchedCount = RefreshDerivedMatches();
 
-        SetStatus($"Applied GPX positions to {matchedCount} photo(s).", InfoBarSeverity.Success);
+        SetStatus(FormatString("Status.ApplyGpxComplete", matchedCount), InfoBarSeverity.Success);
         PushMapState(fit: true);
     }
 
@@ -278,7 +287,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         var selected = GetSelectedPhotos();
         if (selected.Count == 0)
         {
-            SetStatus("Select one or more photos to remove.", InfoBarSeverity.Warning);
+            SetStatus(GetString("Status.RemoveSelectionRequired"), InfoBarSeverity.Warning);
             return;
         }
 
@@ -288,7 +297,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         ApplyPhotoSort();
-        SetStatus($"Removed {selected.Count} photo(s).", InfoBarSeverity.Informational);
+        SetStatus(FormatString("Status.RemoveComplete", selected.Count), InfoBarSeverity.Informational);
         PushMapState(fit: true);
     }
 
@@ -297,7 +306,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         var selected = GetSelectedPhotos();
         if (selected.Count == 0)
         {
-            SetStatus("Select one or more photos to save.", InfoBarSeverity.Warning);
+            SetStatus(GetString("Status.SaveSelectionRequired"), InfoBarSeverity.Warning);
             return;
         }
 
@@ -367,6 +376,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _verticalResizeStartX = e.GetCurrentPoint(WorkspaceGrid).Position.X;
         _initialSidebarWidth = SidebarColumn.ActualWidth;
         ((UIElement)sender).CapturePointer(e.Pointer);
+        UpdateVerticalSplitterVisual(isHovered: true);
         e.Handled = true;
     }
 
@@ -410,6 +420,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _horizontalResizeStartY = e.GetCurrentPoint(PaneGrid).Position.Y;
         _initialPhotoPaneHeight = PhotoPaneRow.ActualHeight;
         ((UIElement)sender).CapturePointer(e.Pointer);
+        UpdateHorizontalSplitterVisual(isHovered: true);
         e.Handled = true;
     }
 
@@ -451,25 +462,118 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         EndHorizontalResize((UIElement)sender);
     }
 
+    private void PreviewMapSplitter_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _isPreviewMapResizeActive = true;
+        _previewMapResizeStartY = e.GetCurrentPoint(PreviewMapGrid).Position.Y;
+        _initialPreviewPaneHeight = PreviewPaneRow.ActualHeight;
+        _initialMapPaneHeight = MapPaneRow.ActualHeight;
+        ((UIElement)sender).CapturePointer(e.Pointer);
+        UpdatePreviewMapSplitterVisual(isHovered: true);
+        e.Handled = true;
+    }
+
+    private void PreviewMapSplitter_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isPreviewMapResizeActive)
+        {
+            return;
+        }
+
+        var delta = e.GetCurrentPoint(PreviewMapGrid).Position.Y - _previewMapResizeStartY;
+        var requestedPreviewHeight = Math.Clamp(
+            _initialPreviewPaneHeight + delta,
+            MinimumPreviewPaneHeight,
+            _initialPreviewPaneHeight + _initialMapPaneHeight - MinimumMapPreviewHeight);
+        var requestedMapHeight = Math.Max(
+            MinimumMapPreviewHeight,
+            _initialPreviewPaneHeight + _initialMapPaneHeight - requestedPreviewHeight);
+
+        PreviewPaneRow.Height = new GridLength(requestedPreviewHeight);
+        MapPaneRow.Height = new GridLength(requestedMapHeight);
+        e.Handled = true;
+    }
+
+    private void PreviewMapSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        EndPreviewMapResize((UIElement)sender);
+        e.Handled = true;
+    }
+
+    private void PreviewMapSplitter_PointerCanceled(object sender, PointerRoutedEventArgs e)
+    {
+        EndPreviewMapResize((UIElement)sender);
+        e.Handled = true;
+    }
+
+    private void PreviewMapSplitter_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        EndPreviewMapResize((UIElement)sender);
+    }
+
     private void TagSelectedAtClick_Click(object sender, RoutedEventArgs e)
     {
         TagSelectedAtLastClick();
     }
 
-    private void PhotoSortComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void PhotoSortHeader_Click(object sender, RoutedEventArgs e)
     {
-        _photoSortField = PhotoSortComboBox.SelectedIndex switch
+        if (sender is not Button button || button.Tag is not string tag)
         {
-            1 => PhotoSortField.CaptureTime,
-            2 => PhotoSortField.AdjustedCaptureTime,
-            3 => PhotoSortField.Latitude,
-            4 => PhotoSortField.Longitude,
-            5 => PhotoSortField.CoordinateSource,
-            6 => PhotoSortField.Status,
-            _ => PhotoSortField.FileName,
-        };
+            return;
+        }
+
+        var requestedField = Enum.Parse<PhotoSortField>(tag, ignoreCase: false);
+        var nextState = _photoSortStateService.Advance(_photoSortField, _photoSortDirection, requestedField);
+        _photoSortField = nextState.Field;
+        _photoSortDirection = nextState.Direction;
 
         ApplyPhotoSort();
+    }
+
+    private void VerticalSplitter_PointerEnteredVisual(object sender, PointerRoutedEventArgs e)
+    {
+        _isVerticalSplitterHovered = true;
+        UpdateVerticalSplitterVisual(isHovered: true);
+    }
+
+    private void VerticalSplitter_PointerExitedVisual(object sender, PointerRoutedEventArgs e)
+    {
+        _isVerticalSplitterHovered = false;
+        if (!_isVerticalResizeActive)
+        {
+            UpdateVerticalSplitterVisual(isHovered: false);
+        }
+    }
+
+    private void HorizontalSplitter_PointerEnteredVisual(object sender, PointerRoutedEventArgs e)
+    {
+        _isHorizontalSplitterHovered = true;
+        UpdateHorizontalSplitterVisual(isHovered: true);
+    }
+
+    private void HorizontalSplitter_PointerExitedVisual(object sender, PointerRoutedEventArgs e)
+    {
+        _isHorizontalSplitterHovered = false;
+        if (!_isHorizontalResizeActive)
+        {
+            UpdateHorizontalSplitterVisual(isHovered: false);
+        }
+    }
+
+    private void PreviewMapSplitter_PointerEnteredVisual(object sender, PointerRoutedEventArgs e)
+    {
+        _isPreviewMapSplitterHovered = true;
+        UpdatePreviewMapSplitterVisual(isHovered: true);
+    }
+
+    private void PreviewMapSplitter_PointerExitedVisual(object sender, PointerRoutedEventArgs e)
+    {
+        _isPreviewMapSplitterHovered = false;
+        if (!_isPreviewMapResizeActive)
+        {
+            UpdatePreviewMapSplitterVisual(isHovered: false);
+        }
     }
 
     private async void RefreshSelectedPhotoPreview()
@@ -479,10 +583,12 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             _previewRequestVersion++;
             SetSelectedPhotoPreview(
                 null,
-                PhotoListView.SelectedItems.Count > 1 ? "Multiple photos selected" : "No photo selected",
                 PhotoListView.SelectedItems.Count > 1
-                    ? "Select a single photo to load its preview."
-                    : "Select one photo to preview it.");
+                    ? GetString("Preview.MultipleSelectionTitle")
+                    : GetString("Preview.NoSelectionTitle"),
+                PhotoListView.SelectedItems.Count > 1
+                    ? GetString("Preview.MultipleSelectionStatus")
+                    : GetString("Preview.NoSelectionStatus"));
             return;
         }
 
@@ -490,7 +596,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         SetSelectedPhotoPreview(
             null,
             photo.FileName,
-            "Loading preview...");
+            GetString("Preview.LoadingStatus"));
 
         try
         {
@@ -510,7 +616,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
                 SetSelectedPhotoPreview(
                     null,
                     photo.FileName,
-                    "Preview not available for this file.");
+                    GetString("Preview.UnavailableStatus"));
                 return;
             }
 
@@ -525,7 +631,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             SetSelectedPhotoPreview(
                 bitmap,
                 photo.FileName,
-                $"{photo.CaptureTimeDisplay} | {photo.Status}");
+                FormatString("Preview.LineFormat", photo.CaptureTimeDisplay, photo.Status));
         }
         catch (Exception)
         {
@@ -537,7 +643,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             SetSelectedPhotoPreview(
                 null,
                 photo.FileName,
-                "Preview could not be loaded for this file.");
+                GetString("Preview.FailedStatus"));
         }
     }
 
@@ -550,7 +656,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }
         else
         {
-            SetStatus("The map view failed to initialize.", InfoBarSeverity.Warning);
+            SetStatus(GetString("Status.MapInitFailed"), InfoBarSeverity.Warning);
         }
     }
 
@@ -564,7 +670,10 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             _lastClickedLatitude = root.GetProperty("latitude").GetDouble();
             _lastClickedLongitude = root.GetProperty("longitude").GetDouble();
-            MapClickSummary = $"Last map click: {_lastClickedLatitude.Value:F6}, {_lastClickedLongitude.Value:F6}";
+            MapClickSummary = FormatString(
+                "Summary.MapClickFormat",
+                _lastClickedLatitude.Value,
+                _lastClickedLongitude.Value);
         }
         else if (type == "markerClick")
         {
@@ -590,7 +699,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
         if (candidatePaths.Count == 0)
         {
-            SetStatus("No new supported photos were added.", InfoBarSeverity.Warning);
+            SetStatus(GetString("Status.NoSupportedPhotos"), InfoBarSeverity.Warning);
             return;
         }
 
@@ -639,15 +748,15 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             }
 
             var message = string.IsNullOrWhiteSpace(resolvedExifTool)
-                ? $"Added {candidatePaths.Count} photo(s). ExifTool was not found, so metadata fell back to file timestamps."
-                : $"Added {candidatePaths.Count} photo(s).";
+                ? FormatString("Status.AddPhotosWithoutExifTool", candidatePaths.Count)
+                : FormatString("Status.AddPhotosComplete", candidatePaths.Count);
             ApplyPhotoSort();
             SetStatus(message, string.IsNullOrWhiteSpace(resolvedExifTool) ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
             PushMapState(fit: true);
         }
         catch (Exception ex)
         {
-            SetStatus($"Failed to load photo metadata: {ex.Message}", InfoBarSeverity.Error);
+            SetStatus(FormatString("Status.MetadataLoadFailed", ex.Message), InfoBarSeverity.Error);
         }
     }
 
@@ -656,13 +765,13 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         var selected = GetSelectedPhotos();
         if (selected.Count == 0)
         {
-            SetStatus("Select one or more photos first.", InfoBarSeverity.Warning);
+            SetStatus(GetString("Status.SelectPhotosFirst"), InfoBarSeverity.Warning);
             return;
         }
 
         if (!_lastClickedLatitude.HasValue || !_lastClickedLongitude.HasValue)
         {
-            SetStatus("Click the map to choose a manual pin location first.", InfoBarSeverity.Warning);
+            SetStatus(GetString("Status.SelectMapPointFirst"), InfoBarSeverity.Warning);
             return;
         }
 
@@ -673,7 +782,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         ApplyPhotoSort();
-        SetStatus($"Pinned {selected.Count} photo(s) at the selected map location.", InfoBarSeverity.Success);
+        SetStatus(FormatString("Status.PinComplete", selected.Count), InfoBarSeverity.Success);
         PushMapState(fit: false);
     }
 
@@ -783,39 +892,33 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ApplyPhotoSort()
     {
-        if (Photos.Count <= 1)
-        {
-            return;
-        }
-
         var sorted = _photoSortService.Sort(
             Photos,
             _photoSortField,
-            IsSortDescending ? ListSortDirection.Descending : ListSortDirection.Ascending);
+            _photoSortDirection);
         var currentOrder = Photos.Select(photo => photo.Id).ToArray();
         var nextOrder = sorted.Select(photo => photo.Id).ToArray();
-
-        if (currentOrder.SequenceEqual(nextOrder))
-        {
-            return;
-        }
 
         var selectedIds = GetSelectedPhotos()
             .Select(photo => photo.Id)
             .ToHashSet(StringComparer.Ordinal);
 
-        Photos.Clear();
-        foreach (var photo in sorted)
+        if (!currentOrder.SequenceEqual(nextOrder))
         {
-            Photos.Add(photo);
+            Photos.Clear();
+            foreach (var photo in sorted)
+            {
+                Photos.Add(photo);
+            }
+
+            PhotoListView.SelectedItems.Clear();
+            foreach (var photo in Photos.Where(photo => selectedIds.Contains(photo.Id)))
+            {
+                PhotoListView.SelectedItems.Add(photo);
+            }
         }
 
-        PhotoListView.SelectedItems.Clear();
-        foreach (var photo in Photos.Where(photo => selectedIds.Contains(photo.Id)))
-        {
-            PhotoListView.SelectedItems.Add(photo);
-        }
-
+        UpdateSortHeaderVisuals();
         RefreshUiState();
     }
 
@@ -849,6 +952,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
         _isVerticalResizeActive = false;
         splitter.ReleasePointerCaptures();
+        UpdateVerticalSplitterVisual(_isVerticalSplitterHovered);
     }
 
     private void EndHorizontalResize(UIElement splitter)
@@ -860,6 +964,88 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
         _isHorizontalResizeActive = false;
         splitter.ReleasePointerCaptures();
+        UpdateHorizontalSplitterVisual(_isHorizontalSplitterHovered);
+    }
+
+    private void EndPreviewMapResize(UIElement splitter)
+    {
+        if (!_isPreviewMapResizeActive)
+        {
+            return;
+        }
+
+        _isPreviewMapResizeActive = false;
+        splitter.ReleasePointerCaptures();
+        UpdatePreviewMapSplitterVisual(_isPreviewMapSplitterHovered);
+    }
+
+    private void UpdateSortHeaderVisuals()
+    {
+        foreach (var header in GetSortHeaders())
+        {
+            var isActive = header.Field == _photoSortField;
+            header.Button.Background = isActive
+                ? GetThemeBrush("SubtleFillColorSecondaryBrush")
+                : null;
+            header.Button.Foreground = isActive
+                ? GetThemeBrush("TextFillColorPrimaryBrush")
+                : GetThemeBrush("TextFillColorSecondaryBrush");
+            header.Indicator.Text = _photoSortDirection == ListSortDirection.Descending ? "↓" : "↑";
+            header.Indicator.Visibility = isActive ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private IEnumerable<(PhotoSortField Field, Button Button, TextBlock Indicator)> GetSortHeaders()
+    {
+        yield return (PhotoSortField.FileName, FileSortHeaderButton, FileSortHeaderIndicator);
+        yield return (PhotoSortField.CaptureTime, CaptureTimeSortHeaderButton, CaptureTimeSortHeaderIndicator);
+        yield return (PhotoSortField.AdjustedCaptureTime, UpdatedTimeSortHeaderButton, UpdatedTimeSortHeaderIndicator);
+        yield return (PhotoSortField.Latitude, LatitudeSortHeaderButton, LatitudeSortHeaderIndicator);
+        yield return (PhotoSortField.Longitude, LongitudeSortHeaderButton, LongitudeSortHeaderIndicator);
+        yield return (PhotoSortField.CoordinateSource, SourceSortHeaderButton, SourceSortHeaderIndicator);
+        yield return (PhotoSortField.Status, StatusSortHeaderButton, StatusSortHeaderIndicator);
+    }
+
+    private void UpdateVerticalSplitterVisual(bool isHovered)
+    {
+        VerticalSplitterGlow.Opacity = _isVerticalResizeActive ? 0.48 : isHovered ? 0.24 : 0;
+        VerticalSplitterHandle.Opacity = _isVerticalResizeActive ? 0.95 : isHovered ? 0.72 : 0.4;
+    }
+
+    private void UpdateHorizontalSplitterVisual(bool isHovered)
+    {
+        HorizontalSplitterGlow.Opacity = _isHorizontalResizeActive ? 0.48 : isHovered ? 0.24 : 0;
+        HorizontalSplitterHandle.Opacity = _isHorizontalResizeActive ? 0.95 : isHovered ? 0.72 : 0.4;
+    }
+
+    private void UpdatePreviewMapSplitterVisual(bool isHovered)
+    {
+        PreviewMapSplitterGlow.Opacity = _isPreviewMapResizeActive ? 0.48 : isHovered ? 0.24 : 0;
+        PreviewMapSplitterHandle.Opacity = _isPreviewMapResizeActive ? 0.95 : isHovered ? 0.72 : 0.4;
+    }
+
+    private static Brush GetThemeBrush(string key)
+    {
+        return (Brush)Application.Current.Resources[key];
+    }
+
+    private static string GetString(string key)
+    {
+        try
+        {
+            _resourceLoader ??= new ResourceLoader();
+            var value = _resourceLoader.GetString(key);
+            return string.IsNullOrWhiteSpace(value) ? key : value;
+        }
+        catch
+        {
+            return key;
+        }
+    }
+
+    private static string FormatString(string key, params object[] arguments)
+    {
+        return string.Format(CultureInfo.CurrentCulture, GetString(key), arguments);
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

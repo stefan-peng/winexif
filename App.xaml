@@ -8,9 +8,54 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+
+            <CornerRadius x:Key="AppMajorCornerRadius">12</CornerRadius>
+            <CornerRadius x:Key="AppNestedCornerRadius">10</CornerRadius>
+            <CornerRadius x:Key="AppCompactCornerRadius">8</CornerRadius>
+            <CornerRadius x:Key="AppGripCornerRadius">3</CornerRadius>
+
+            <Thickness x:Key="AppCardPadding">14</Thickness>
+            <Thickness x:Key="AppPanePadding">10</Thickness>
+            <Thickness x:Key="AppSectionMargin">12,0,12,12</Thickness>
+
+            <Style x:Key="SidebarCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}" />
+                <Setter Property="CornerRadius" Value="{StaticResource AppMajorCornerRadius}" />
+                <Setter Property="Padding" Value="{StaticResource AppCardPadding}" />
+            </Style>
+
+            <Style x:Key="PreviewCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}" />
+                <Setter Property="CornerRadius" Value="{StaticResource AppMajorCornerRadius}" />
+                <Setter Property="Padding" Value="12" />
+            </Style>
+
+            <Style x:Key="SectionPaneStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}" />
+                <Setter Property="CornerRadius" Value="{StaticResource AppMajorCornerRadius}" />
+                <Setter Property="Padding" Value="{StaticResource AppPanePadding}" />
+            </Style>
+
+            <Style x:Key="PhotoListItemStyle" TargetType="ListViewItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="0,0,0,2" />
+                <Setter Property="UseSystemFocusVisuals" Value="True" />
+            </Style>
+
+            <Style x:Key="SortHeaderButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="CornerRadius" Value="{StaticResource AppCompactCornerRadius}" />
+                <Setter Property="Padding" Value="8,6" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="UseSystemFocusVisuals" Value="True" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
